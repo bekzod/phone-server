@@ -4,7 +4,7 @@ FROM ubuntu:22.04
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update package lists and install build dependencies, including JACK2 development libraries
+# Update package lists and install build dependencies, including JACK2 development librariesg
 RUN apt-get update && apt-get install -y \
     build-essential \
     wget \
@@ -20,7 +20,6 @@ RUN apt-get update && apt-get install -y \
     libjansson-dev \
     libedit-dev \
     libjack-jackd2-dev \
-    jack-audio-connection-kit-devel \
  && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory for source downloads/build
