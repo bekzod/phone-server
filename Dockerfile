@@ -1,10 +1,8 @@
-# Use the slim variant of Ubuntu 22.04 as the base image
-FROM ubuntu:22.04
+FROM ubuntu:22.04-slim
 
-# Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update package lists and install build dependencies, including JACK2 development librariesg
+# Install required packages (including JACK libraries and jackd2)
 RUN apt-get update && apt-get install -y \
     build-essential \
     wget \
@@ -20,31 +18,39 @@ RUN apt-get update && apt-get install -y \
     libjansson-dev \
     libedit-dev \
     libjack-jackd2-dev \
+    jackd2 \
  && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory for source downloads/build
 WORKDIR /usr/src
 
-# Download and extract Asterisk 22.2.0 source code
+# Download and extract Asterisk 22.2.0
 RUN wget http://downloads.asterisk.org/pub/telephony/asterisk/asterisk-22.2.0.tar.gz \
  && tar zxvf asterisk-22.2.0.tar.gz \
  && rm asterisk-22.2.0.tar.gz
 
-# Change directory to the extracted Asterisk source
 WORKDIR /usr/src/asterisk-22.2.0
 
-# Configure Asterisk with JACK support, explicitly enable the res_jack module, then build and install
-RUN ./configure --with-jack \
- && make menuselect.makeopts \
- && menuselect/menuselect --enable res_jack menuselect.makeopts \
- && make -j$(nproc) \
- && make install \
- && make samples \
- && make config \
- && ldconfig
+# Run configure with JACK support
+RUN ./configure --with-jack
 
-# Expose ports typically used by Asterisk (SIP and AMI)
+# Generate the menuselect options file
+RUN make menuselect.makeopts
+
+# (Optional) Ensure the menuselect script is executable
+RUN chmod +x menuselect/menuselect
+
+# Enable the JACK module (res_jack) using menuselect
+RUN ./menuselect/menuselect --enable res_jack menuselect.makeopts
+
+# Compile using all available processors
+RUN make -j$(nproc)
+
+# Install Asterisk, sample configuration files, set up init scripts, and update linker cache
+RUN make install
+RUN make samples
+RUN make config
+RUN ldconfig
+
 EXPOSE 5060/udp 5060/tcp 5038
 
-# By default, launch the Asterisk CLI in verbose mode
 CMD ["/usr/sbin/asterisk", "-vvvc"]
