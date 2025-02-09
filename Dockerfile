@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     libjansson-dev \
     libedit-dev \
     libjack-jackd2-dev \
+    jack-audio-connection-kit-devel \
  && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory for source downloads/build
