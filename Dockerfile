@@ -1,5 +1,5 @@
 # Use the slim variant of Ubuntu 22.04 as the base image
-FROM ubuntu:22.04-slim
+FROM ubuntu:22.04
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
