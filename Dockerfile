@@ -40,7 +40,7 @@ RUN make menuselect.makeopts
 RUN chmod +x menuselect/menuselect
 
 # Enable the JACK module (res_jack) using menuselect
-RUN ./menuselect/menuselect --enable res_jack menuselect.makeopts
+# RUN ./menuselect/menuselect --enable res_jack menuselect.makeopts
 
 # Compile using all available processors
 RUN make -j$(nproc)
@@ -50,6 +50,20 @@ RUN make install
 RUN make samples
 RUN make config
 RUN ldconfig
+
+# -------------------------------
+# Copy custom configuration, logs, sounds, and AGI scripts from current directory
+# -------------------------------
+
+# Copy entire directories (make sure these directories exist in the build context)
+COPY asterisk_conf/ /etc/asterisk/
+COPY asterisk_logs/ /var/log/asterisk/
+COPY sounds/ /var/lib/asterisk/sounds/
+
+# Ensure the agi-bin directory exists, then copy the individual files.
+RUN mkdir -p /var/lib/asterisk/agi-bin
+COPY index.js /var/lib/asterisk/agi-bin/index.js
+COPY log.txt /var/lib/asterisk/agi-bin/log.txt
 
 EXPOSE 5060/udp 5060/tcp 5038
 
