@@ -1,70 +1,55 @@
-FROM ubuntu:22.04
+# Use Debian Bullseye as the base image
+FROM debian:bullseye
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Set Asterisk version as an environment variable for convenience
+ENV ASTERISK_VERSION=22.2.0
 
-# Install required packages (including JACK libraries and jackd2)
+# Install packages required for building Asterisk, plus Python and basic tools.
+# (Additional Asterisk dependencies are installed by the provided Asterisk script.)
 RUN apt-get update && apt-get install -y \
     build-essential \
     wget \
-    autoconf \
-    automake \
-    libtool \
-    pkg-config \
-    libncurses5-dev \
+    git \
+    subversion \
     libssl-dev \
+    libncurses5-dev \
+    uuid-dev \
     libxml2-dev \
     libsqlite3-dev \
-    uuid-dev \
     libjansson-dev \
     libedit-dev \
-    libjack-jackd2-dev \
-    jackd2 \
- && rm -rf /var/lib/apt/lists/*
+    libldns-dev \
+    libsrtp2-dev \
+    curl \
+    gnupg \
+    python3 \
+    python3-pip && \
+    rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src
+# Install Node.js using NodeSource (here we use Node.js 18.x; change if needed)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get update && apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
-# Download and extract Asterisk 22.2.0
-RUN wget http://downloads.asterisk.org/pub/telephony/asterisk/asterisk-22.2.0.tar.gz \
- && tar zxvf asterisk-22.2.0.tar.gz \
- && rm asterisk-22.2.0.tar.gz
+# Download and extract the Asterisk source tarball for the specified version
+RUN wget http://downloads.asterisk.org/pub/telephony/asterisk/asterisk-${ASTERISK_VERSION}.tar.gz && \
+    tar xvf asterisk-${ASTERISK_VERSION}.tar.gz && \
+    rm asterisk-${ASTERISK_VERSION}.tar.gz
 
-WORKDIR /usr/src/asterisk-22.2.0
+# Change working directory to the Asterisk source folder
+WORKDIR /asterisk-${ASTERISK_VERSION}
 
-# Run configure with JACK support
-RUN ./configure --with-jack
+# (Optional) Install additional prerequisites via the Asterisk script
+RUN contrib/scripts/install_prereq install
 
-# Generate the menuselect options file
-RUN make menuselect.makeopts
+# Configure Asterisk (using bundled jansson, for example), compile and install
+RUN ./configure --with-jansson-bundled && \
+    make -j$(nproc) && \
+    make install && \
+    make samples
 
-# (Optional) Ensure the menuselect script is executable
-RUN chmod +x menuselect/menuselect
+# Expose ports that Asterisk might use (modify as needed)
+EXPOSE 5060 5061 5038
 
-# Enable the JACK module (res_jack) using menuselect
-# RUN ./menuselect/menuselect --enable res_jack menuselect.makeopts
-
-# Compile using all available processors
-RUN make -j$(nproc)
-
-# Install Asterisk, sample configuration files, set up init scripts, and update linker cache
-RUN make install
-RUN make samples
-RUN make config
-RUN ldconfig
-
-# -------------------------------
-# Copy custom configuration, logs, sounds, and AGI scripts from current directory
-# -------------------------------
-
-# Copy entire directories (make sure these directories exist in the build context)
-COPY asterisk_conf/ /etc/asterisk/
-COPY asterisk_logs/ /var/log/asterisk/
-COPY sounds/ /var/lib/asterisk/sounds/
-
-# Ensure the agi-bin directory exists, then copy the individual files.
-RUN mkdir -p /var/lib/asterisk/agi-bin
-COPY index.js /var/lib/asterisk/agi-bin/index.js
-COPY log.txt /var/lib/asterisk/agi-bin/log.txt
-
-EXPOSE 5060/udp 5060/tcp 5038
-
-CMD ["/usr/sbin/asterisk", "-vvvc"]
+# Run Asterisk in foreground mode when the container starts
+CMD ["asterisk", "-f"]
