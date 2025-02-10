@@ -1,8 +1,8 @@
 const dgram = require("dgram");
 
 // RTP Server Configuration
-const RTP_PORT = 9000; // Listening Port
-const RTP_HOST = "0.0.0.0"; // Listen on all network interfaces
+const RTP_PORT = "9999"; // Listening Port
+const RTP_HOST = "127.0.0.1"; // Listen on all network interfaces
 
 // Create a UDP socket
 const rtpServer = dgram.createSocket("udp4");
