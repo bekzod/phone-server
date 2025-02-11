@@ -2,7 +2,7 @@ const dgram = require('dgram');
 const client = dgram.createSocket('udp4');
 
 const SERVER_HOST = '127.0.0.1';
-const SERVER_PORT = 9999;
+const SERVER_PORT = 10000;
 const MESSAGE = 'Hello, UDP Server!';
 
 // Send a message to the UDP server

@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "ari-client": "^2.2.0",
-    "dgram": "^1.0.1"
+    "dgram": "^1.0.1",
+    "rtp-parser": "^1.0.0",
+    "werift-rtp": "^0.8.4"
   }
 }

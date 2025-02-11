@@ -1,36 +1,53 @@
-const dgram = require("dgram");
+const dgram = require('dgram');
+const fs = require('fs');
 
-// RTP Server Configuration
-const RTP_PORT = "9999"; // Listening Port
-const RTP_HOST = "127.0.0.1"; // Listen on all network interfaces
+const PORT = 10000;
+const HOST = '127.0.0.1';
+
+// Set the duration (in milliseconds) for which to record audio (e.g., 3 minutes)
+const recordingDuration = 1 * 60 * 1000;
 
 // Create a UDP socket
-const rtpServer = dgram.createSocket("udp4");
+const server = dgram.createSocket('udp4');
 
-// Handle incoming RTP packets
-rtpServer.on("message", (msg, rinfo) => {
-    console.log(`📡 Received RTP packet from ${rinfo.address}:${rinfo.port}`);
-    
-    // Extract RTP header information
-    const version = (msg[0] >> 6) & 0x03;
-    const payloadType = msg[1] & 0x7F;
-    const sequenceNumber = (msg[2] << 8) | msg[3];
-    const timestamp = (msg[4] << 24) | (msg[5] << 16) | (msg[6] << 8) | msg[7];
+// Create a write stream to save incoming u-law packets into a file.
+// The file 'audio.ulaw' will be created (or appended to if it exists).
+const audioStream = fs.createWriteStream('audio.ulaw', { flags: 'a' });
 
-    console.log(`🔹 RTP Version: ${version}`);
-    console.log(`🔹 Payload Type: ${payloadType}`);
-    console.log(`🔹 Sequence Number: ${sequenceNumber}`);
-    console.log(`🔹 Timestamp: ${timestamp}`);
-    console.log("------------------------------------------------");
+// A flag to control whether recording is active.
+let recordingActive = true;
+
+// Handle incoming messages
+server.on('message', (msg, rinfo) => {
+  console.log(`Received ${msg.length} bytes from ${rinfo.address}:${rinfo.port}`);
+
+  // Write the incoming packet only if within the recording duration
+  if (recordingActive) {
+    audioStream.write(msg, (err) => {
+      if (err) {
+        console.error('Error writing audio data to file:', err);
+      }
+    });
+  } else {
+    console.log('Recording period has ended. Packet not saved.');
+  }
 });
 
-// Handle errors
-rtpServer.on("error", (err) => {
-    console.error(`❌ RTP Server Error: ${err.message}`);
-    rtpServer.close();
+// Stop recording after the specified duration
+setTimeout(() => {
+  recordingActive = false;
+  audioStream.end(() => {
+    console.log('Recording ended. Audio file closed.');
+  });
+}, recordingDuration);
+
+// Handle server errors
+server.on('error', (err) => {
+  console.error(`Server error:\n${err.stack}`);
+  server.close();
 });
 
-// Start the RTP server
-rtpServer.bind(RTP_PORT, RTP_HOST, () => {
-    console.log(`✅ RTP Server listening on ${RTP_HOST}:${RTP_PORT}`);
+// Start the server
+server.bind(PORT, HOST, () => {
+  console.log(`UDP server listening on ${HOST}:${PORT}`);
 });
