@@ -1,5 +1,5 @@
 {
-  "name": "asteriks-ai",
+  "name": "agi-bin",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dgram": "^1.0.1",
-    "ws": "^8.18.0"
+    "ari-client": "^2.2.0",
+    "dgram": "^1.0.1"
   }
 }
