@@ -44,9 +44,21 @@ RUN contrib/scripts/install_prereq install
 
 # Configure Asterisk (using bundled jansson, for example), compile and install
 RUN ./configure --with-jansson-bundled && \
-    make -j$(nproc) && \
+    make -j"$(nproc)" && \
     make install && \
     make samples
+
+###
+# Copy your local config/logs/audio/AGI directories into the image
+# (Omit these COPY lines if you only intend to mount volumes at runtime)
+###
+COPY asterisk_conf/ /etc/asterisk/
+COPY asterisk_logs/ /var/log/asterisk/
+COPY sounds/        /var/lib/asterisk/sounds/
+COPY agi-bin/       /var/lib/asterisk/agi-bin/
+
+# Declare volumes so you can override them at runtime using `-v`
+VOLUME ["/etc/asterisk", "/var/log/asterisk", "/var/lib/asterisk/sounds", "/var/lib/asterisk/agi-bin"]
 
 # Expose ports that Asterisk might use (modify as needed)
 EXPOSE 5060 5061 5038
