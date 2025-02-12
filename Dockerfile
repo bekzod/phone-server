@@ -40,7 +40,7 @@ RUN wget http://downloads.asterisk.org/pub/telephony/asterisk/asterisk-${ASTERIS
 WORKDIR /asterisk-${ASTERISK_VERSION}
 
 # (Optional) Install additional prerequisites via the Asterisk script
-RUN contrib/scripts/install_prereq install
+# RUN contrib/scripts/install_prereq install
 
 # Configure Asterisk (using bundled jansson, for example), compile and install
 RUN ./configure --with-jansson-bundled && \
